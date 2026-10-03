@@ -79,14 +79,10 @@ public class Customer : MonoBehaviour
                 false
             );
 
-            deliveredFood.transform.localPosition =
-                Vector3.zero;
+            deliveredFood.transform.localPosition = Vector3.zero;
+            deliveredFood.transform.localRotation = Quaternion.identity;
 
-            deliveredFood.transform.localRotation =
-                Quaternion.identity;
-
-            Rigidbody rb =
-                deliveredFood.GetComponent<Rigidbody>();
+            Rigidbody rb = deliveredFood.GetComponent<Rigidbody>();
 
             if (rb != null)
             {
@@ -95,34 +91,42 @@ public class Customer : MonoBehaviour
             }
         }
 
-        bool correctOrder =
-            deliveredFoodType == RequestedFood;
+        bool correctOrder = deliveredFoodType == RequestedFood;
 
-        // Change emoji
-        customerEmoji.ShowResult(correctOrder);
+        Debug.Log(
+            "Customer order: " + RequestedFood +
+            " | Delivered: " + deliveredFoodType +
+            " | Correct: " + correctOrder
+        );
+
+        // CHANGE EMOJI
+        if (customerEmoji != null)
+        {
+            customerEmoji.ShowResult(correctOrder);
+        }
+        else
+        {
+            Debug.LogError(
+                gameObject.name +
+                ": Customer Emoji reference is missing!"
+            );
+        }
 
         if (correctOrder)
         {
-            int payment =
-                FoodPricing.GetPrice(deliveredFoodType);
+            int payment = FoodPricing.GetPrice(deliveredFoodType);
 
-            MoneyManager.Instance.AddMoney(payment);
+            MoneyManager.Instance.CreateCash(payment);
 
             Debug.Log(
-                "Correct order! " +
-                gameObject.name +
-                " paid $" +
-                payment
+                "Correct order! Customer generated $" +
+                payment + " in cash."
             );
         }
         else
         {
             Debug.Log(
-                "Wrong order! Customer wanted " +
-                RequestedFood +
-                " but received " +
-                deliveredFoodType +
-                ". No money earned."
+                "Wrong order! No money generated."
             );
         }
 

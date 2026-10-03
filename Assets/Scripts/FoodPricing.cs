@@ -4,14 +4,14 @@ public static class FoodPricing
     {
         switch (foodType)
         {
-            case FoodType.Burger:
+            case FoodType.Fries:
                 return 5;
 
             case FoodType.IceCream:
-                return 3;
+                return 10;
 
-            case FoodType.Fries:
-                return 2;
+            case FoodType.Burger:
+                return 15;
 
             default:
                 return 0;

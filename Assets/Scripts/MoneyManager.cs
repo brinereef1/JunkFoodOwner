@@ -1,16 +1,24 @@
+using TMPro;
 using UnityEngine;
 
 public class MoneyManager : MonoBehaviour
 {
     public static MoneyManager Instance { get; private set; }
 
-    public int Money { get; private set; }
+    [Header("Money UI")]
+    [SerializeField] private TMP_Text moneyText;
 
     [Header("Cash")]
     [SerializeField] private GameObject cashContainer;
 
+    [SerializeField] private int cashValue = 5;
+
     private GameObject[] cashObjects;
+
     private int nextCashIndex = 0;
+    private int totalMoney = 0;
+
+    public int TotalMoney => totalMoney;
 
     private void Awake()
     {
@@ -22,10 +30,11 @@ public class MoneyManager : MonoBehaviour
 
         Instance = this;
 
-        SetupCashObjects();
+        SetupCash();
+        UpdateMoneyText();
     }
 
-    private void SetupCashObjects()
+    private void SetupCash()
     {
         if (cashContainer == null)
         {
@@ -33,49 +42,87 @@ public class MoneyManager : MonoBehaviour
             return;
         }
 
-        int childCount = cashContainer.transform.childCount;
+        int count = cashContainer.transform.childCount;
 
-        cashObjects = new GameObject[childCount];
+        cashObjects = new GameObject[count];
 
-        for (int i = 0; i < childCount; i++)
+        for (int i = 0; i < count; i++)
         {
-            cashObjects[i] = cashContainer.transform.GetChild(i).gameObject;
+            cashObjects[i] =
+                cashContainer.transform.GetChild(i).gameObject;
 
-            // Make sure all cash starts disabled
             cashObjects[i].SetActive(false);
         }
     }
 
-    public void AddMoney(int amount)
+    // Creates physical cash for a successful order
+    public void CreateCash(int amount)
     {
-        Money += amount;
-
-        EnableNextCash();
+        int cashCount = amount / cashValue;
 
         Debug.Log(
-            "Earned $" + amount +
-            " | Total Money: $" + Money
+            "Creating " +
+            cashCount +
+            " cash object(s) worth $" +
+            amount
         );
+
+        for (int i = 0; i < cashCount; i++)
+        {
+            EnableNextCash();
+        }
     }
 
     private void EnableNextCash()
     {
-        if (cashObjects == null || cashObjects.Length == 0)
+        if (cashObjects == null)
             return;
 
         if (nextCashIndex >= cashObjects.Length)
         {
-            Debug.LogWarning("No more cash objects available.");
+            Debug.LogWarning(
+                "No disabled cash objects left!"
+            );
+
             return;
         }
 
-        cashObjects[nextCashIndex].SetActive(true);
+        GameObject cash =
+            cashObjects[nextCashIndex];
+
+        cash.SetActive(true);
 
         Debug.Log(
-            "Enabled Cash Object: " +
-            cashObjects[nextCashIndex].name
+            "Cash appeared: " +
+            cash.name +
+            " ($" +
+            cashValue +
+            ")"
         );
 
         nextCashIndex++;
+    }
+
+    // Called when player actually collects cash
+    public void CollectCash(GameObject cashObject)
+    {
+        totalMoney += cashValue;
+
+        cashObject.SetActive(false);
+
+        UpdateMoneyText();
+
+        Debug.Log(
+            "Collected $5 | Total Money: $" +
+            totalMoney
+        );
+    }
+
+    private void UpdateMoneyText()
+    {
+        if (moneyText == null)
+            return;
+
+        moneyText.text = "$" + totalMoney;
     }
 }

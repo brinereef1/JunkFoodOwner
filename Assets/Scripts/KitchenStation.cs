@@ -1,19 +1,33 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class KitchenStation : MonoBehaviour
 {
+    [Header("Food")]
     [SerializeField] private FoodType foodType;
     [SerializeField] private GameObject foodPrefab;
+
+    [Header("Pickup")]
     [SerializeField] private float pickupTime = 2f;
+
+    [Header("Timer")]
+    [SerializeField] private Image timerImage;
 
     private PlayerCarry currentPlayer;
     private Coroutine pickupCoroutine;
 
+    private void Start()
+    {
+        if (timerImage != null)
+        {
+            timerImage.fillAmount = 0f;
+            timerImage.gameObject.SetActive(false);
+        }
+    }
+
     private void OnTriggerEnter(Collider other)
     {
-        // PlayerCarry is directly on CarryPoint.
-        // Do NOT use GetComponentInParent here.
         PlayerCarry playerCarry = other.GetComponent<PlayerCarry>();
 
         if (playerCarry == null)
@@ -34,25 +48,54 @@ public class KitchenStation : MonoBehaviour
     {
         Debug.Log("Preparing " + foodType + "...");
 
-        yield return new WaitForSeconds(pickupTime);
-
-        if (currentPlayer == null)
+        // Show timer
+        if (timerImage != null)
         {
-            pickupCoroutine = null;
-            yield break;
+            timerImage.fillAmount = 0f;
+            timerImage.gameObject.SetActive(true);
         }
 
-        if (!currentPlayer.IsCarrying)
+        float elapsedTime = 0f;
+
+        while (elapsedTime < pickupTime)
         {
-            currentPlayer.PickUpFood(foodPrefab, foodType);
+            // Player must still be here
+            if (currentPlayer == null)
+            {
+                ResetTimer();
+                yield break;
+            }
+
+            elapsedTime += Time.deltaTime;
+
+            float progress = elapsedTime / pickupTime;
+
+            if (timerImage != null)
+            {
+                timerImage.fillAmount = progress;
+            }
+
+            yield return null;
         }
 
+        // Make sure the player is still there
+        if (currentPlayer != null &&
+            !currentPlayer.IsCarrying)
+        {
+            currentPlayer.PickUpFood(
+                foodPrefab,
+                foodType
+            );
+
+            Debug.Log(foodType + " is ready!");
+        }
+
+        ResetTimer();
         pickupCoroutine = null;
     }
 
     private void OnTriggerExit(Collider other)
     {
-        // Again, only react to CarryPoint itself.
         PlayerCarry playerCarry = other.GetComponent<PlayerCarry>();
 
         if (playerCarry == null)
@@ -69,6 +112,21 @@ public class KitchenStation : MonoBehaviour
             pickupCoroutine = null;
         }
 
-        Debug.Log("Player left kitchen before food was ready.");
+        ResetTimer();
+
+        Debug.Log(
+            "Player left " +
+            foodType +
+            " station before food was ready."
+        );
+    }
+
+    private void ResetTimer()
+    {
+        if (timerImage == null)
+            return;
+
+        timerImage.fillAmount = 0f;
+        timerImage.gameObject.SetActive(false);
     }
 }
