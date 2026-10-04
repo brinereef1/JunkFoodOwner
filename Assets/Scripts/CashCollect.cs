@@ -5,11 +5,13 @@ public class CashCollect : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         CharacterController player =
-            other.GetComponent<CharacterController>();
+            other.GetComponentInParent<CharacterController>();
 
         if (player == null)
             return;
 
-        MoneyManager.Instance.CollectCash(gameObject);
+        Debug.Log("Cash collected: " + gameObject.name);
+
+        gameObject.SetActive(false);
     }
 }

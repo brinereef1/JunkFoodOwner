@@ -13,6 +13,16 @@ public class CustomerDelivery : MonoBehaviour
         if (playerCarry != null)
         {
             player = playerCarry;
+
+            EmployeeMovement employee =
+                playerCarry.GetComponentInParent<EmployeeMovement>();
+
+            // Only stop if employee is actually carrying food
+            if (employee != null &&
+                playerCarry.IsCarrying)
+            {
+                employee.ReachedDeliveryPoint();
+            }
         }
 
         Customer customerComponent =
@@ -21,13 +31,12 @@ public class CustomerDelivery : MonoBehaviour
         if (customerComponent != null)
         {
             customer = customerComponent;
-
             customer.SetInsideDeliveryPoint(true);
         }
 
         TryDeliver();
-    }
-
+    }   
+    
     private void OnTriggerStay(Collider other)
     {
         TryDeliver();
@@ -85,5 +94,17 @@ public class CustomerDelivery : MonoBehaviour
             food,
             deliveredFood
         );
+
+        // ---------------------------------------------
+        // EMPLOYEE FINISHED HIS DELIVERY
+        // ---------------------------------------------
+
+        EmployeeMovement employee =
+            player.GetComponentInParent<EmployeeMovement>();
+
+        if (employee != null)
+        {
+            employee.DeliveryCompleted();
+        }
     }
 }

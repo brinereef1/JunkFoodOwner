@@ -14,7 +14,6 @@ public class Customer : MonoBehaviour
     [SerializeField] private CustomerEmoji customerEmoji;
 
     private GameObject deliveredFood;
-
     private CustomerMovement movement;
 
     private void Awake()
@@ -46,8 +45,10 @@ public class Customer : MonoBehaviour
             RequestedFood
         );
 
-        // Show requested food above customer
-        customerEmoji.ShowFoodRequest(RequestedFood);
+        if (customerEmoji != null)
+        {
+            customerEmoji.ShowFoodRequest(RequestedFood);
+        }
     }
 
     public void SetWaypoint(CustomerWaypoint waypoint)
@@ -79,10 +80,14 @@ public class Customer : MonoBehaviour
                 false
             );
 
-            deliveredFood.transform.localPosition = Vector3.zero;
-            deliveredFood.transform.localRotation = Quaternion.identity;
+            deliveredFood.transform.localPosition =
+                Vector3.zero;
 
-            Rigidbody rb = deliveredFood.GetComponent<Rigidbody>();
+            deliveredFood.transform.localRotation =
+                Quaternion.identity;
+
+            Rigidbody rb =
+                deliveredFood.GetComponent<Rigidbody>();
 
             if (rb != null)
             {
@@ -91,42 +96,41 @@ public class Customer : MonoBehaviour
             }
         }
 
-        bool correctOrder = deliveredFoodType == RequestedFood;
+        bool correctOrder =
+            deliveredFoodType == RequestedFood;
 
         Debug.Log(
-            "Customer order: " + RequestedFood +
-            " | Delivered: " + deliveredFoodType +
-            " | Correct: " + correctOrder
+            "Customer order: " +
+            RequestedFood +
+            " | Delivered: " +
+            deliveredFoodType +
+            " | Correct: " +
+            correctOrder
         );
 
-        // CHANGE EMOJI
+        // Show happy or angry emoji
         if (customerEmoji != null)
         {
             customerEmoji.ShowResult(correctOrder);
         }
-        else
-        {
-            Debug.LogError(
-                gameObject.name +
-                ": Customer Emoji reference is missing!"
-            );
-        }
 
         if (correctOrder)
         {
-            int payment = FoodPricing.GetPrice(deliveredFoodType);
+            int payment =
+                FoodPricing.GetPrice(deliveredFoodType);
 
-            MoneyManager.Instance.CreateCash(payment);
+            // Your current MoneyManager method
+            MoneyManager.Instance.AddMoney(payment);
 
             Debug.Log(
-                "Correct order! Customer generated $" +
-                payment + " in cash."
+                "Correct order! Customer paid $" +
+                payment
             );
         }
         else
         {
             Debug.Log(
-                "Wrong order! No money generated."
+                "Wrong order! No money earned."
             );
         }
 

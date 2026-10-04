@@ -5,20 +5,19 @@ public class MoneyManager : MonoBehaviour
 {
     public static MoneyManager Instance { get; private set; }
 
+    [Header("Money")]
+    [SerializeField] private int startingMoney = 20;
+
+    public int Money { get; private set; }
+
     [Header("Money UI")]
     [SerializeField] private TMP_Text moneyText;
 
     [Header("Cash")]
     [SerializeField] private GameObject cashContainer;
 
-    [SerializeField] private int cashValue = 5;
-
     private GameObject[] cashObjects;
-
     private int nextCashIndex = 0;
-    private int totalMoney = 0;
-
-    public int TotalMoney => totalMoney;
 
     private void Awake()
     {
@@ -30,58 +29,94 @@ public class MoneyManager : MonoBehaviour
 
         Instance = this;
 
-        SetupCash();
-        UpdateMoneyText();
+        Money = startingMoney;
+
+        SetupCashObjects();
+
+        UpdateMoneyUI();
+
+        Debug.Log("Starting Money: $" + Money);
     }
 
-    private void SetupCash()
+    private void SetupCashObjects()
     {
         if (cashContainer == null)
         {
-            Debug.LogError("Cash Container is not assigned!");
+            Debug.LogError(
+                "Cash Container is not assigned!"
+            );
+
             return;
         }
 
-        int count = cashContainer.transform.childCount;
+        int childCount =
+            cashContainer.transform.childCount;
 
-        cashObjects = new GameObject[count];
+        cashObjects =
+            new GameObject[childCount];
 
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < childCount; i++)
         {
             cashObjects[i] =
-                cashContainer.transform.GetChild(i).gameObject;
+                cashContainer.transform
+                    .GetChild(i)
+                    .gameObject;
 
+            // ALWAYS disabled at game start
             cashObjects[i].SetActive(false);
         }
+
+        nextCashIndex = 0;
     }
 
-    // Creates physical cash for a successful order
-    public void CreateCash(int amount)
+    public void AddMoney(int amount)
     {
-        int cashCount = amount / cashValue;
+        Money += amount;
+
+        EnableNextCash();
+
+        UpdateMoneyUI();
 
         Debug.Log(
-            "Creating " +
-            cashCount +
-            " cash object(s) worth $" +
-            amount
+            "Earned $" + amount +
+            " | Total Money: $" + Money
+        );
+    }
+
+    public bool CanAfford(int amount)
+    {
+        return Money >= amount;
+    }
+
+    public bool SpendMoney(int amount)
+    {
+        if (Money < amount)
+            return false;
+
+        Money -= amount;
+
+        UpdateMoneyUI();
+
+        Debug.Log(
+            "Spent $" + amount +
+            " | Remaining Money: $" + Money
         );
 
-        for (int i = 0; i < cashCount; i++)
-        {
-            EnableNextCash();
-        }
+        return true;
     }
 
     private void EnableNextCash()
     {
-        if (cashObjects == null)
+        if (cashObjects == null ||
+            cashObjects.Length == 0)
+        {
             return;
+        }
 
         if (nextCashIndex >= cashObjects.Length)
         {
             Debug.LogWarning(
-                "No disabled cash objects left!"
+                "No more cash objects available."
             );
 
             return;
@@ -93,36 +128,18 @@ public class MoneyManager : MonoBehaviour
         cash.SetActive(true);
 
         Debug.Log(
-            "Cash appeared: " +
-            cash.name +
-            " ($" +
-            cashValue +
-            ")"
+            "Enabled Cash Object: " +
+            cash.name
         );
 
         nextCashIndex++;
     }
 
-    // Called when player actually collects cash
-    public void CollectCash(GameObject cashObject)
-    {
-        totalMoney += cashValue;
-
-        cashObject.SetActive(false);
-
-        UpdateMoneyText();
-
-        Debug.Log(
-            "Collected $5 | Total Money: $" +
-            totalMoney
-        );
-    }
-
-    private void UpdateMoneyText()
+    private void UpdateMoneyUI()
     {
         if (moneyText == null)
             return;
 
-        moneyText.text = "$" + totalMoney;
+        moneyText.text = "$" + Money;
     }
 }
