@@ -3,17 +3,15 @@ using UnityEngine;
 public class CustomerSpawner : MonoBehaviour
 {
     [SerializeField] private GameObject customerPrefab;
-
     [SerializeField] private CustomerWaypoint[] queueWaypoints;
-
     [SerializeField] private Transform[] exitWaypoints;
-
     [SerializeField] private float spawnInterval = 3f;
 
     private float spawnTimer;
 
     private void Start()
     {
+        // Spawn the first customer when the scene starts.
         TrySpawnCustomer();
     }
 
@@ -24,19 +22,16 @@ public class CustomerSpawner : MonoBehaviour
         if (spawnTimer >= spawnInterval)
         {
             spawnTimer = 0f;
-
             TrySpawnCustomer();
         }
     }
 
     private void TrySpawnCustomer()
     {
-        if (queueWaypoints == null ||
-            queueWaypoints.Length == 0)
+        if (queueWaypoints == null || queueWaypoints.Length == 0)
             return;
 
-        // If spawn waypoint is occupied,
-        // don't create another customer.
+        // Do not spawn another customer if the first queue point is still full.
         if (!queueWaypoints[0].IsEmpty)
             return;
 
@@ -50,10 +45,7 @@ public class CustomerSpawner : MonoBehaviour
         CustomerMovement movement =
             customerObject.GetComponent<CustomerMovement>();
 
-        movement.Initialize(
-            queueWaypoints,
-            exitWaypoints
-        );
+        movement.Initialize(queueWaypoints, exitWaypoints);
 
         Debug.Log("Customer spawned.");
     }

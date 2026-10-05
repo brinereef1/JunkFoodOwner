@@ -6,10 +6,12 @@ public class PoolManager : MonoBehaviour
 {
     public static PoolManager Instance { get; private set; }
 
+    // One pool per prefab. This lets us reuse objects instead of creating new ones.
     private Dictionary<GameObject, ObjectPool<GameObject>> pools = new();
 
     private void Awake()
     {
+        // Keep only one pool manager in the scene.
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -25,6 +27,7 @@ public class PoolManager : MonoBehaviour
         Quaternion rotation,
         Transform parent = null)
     {
+        // Make a pool if this prefab has not been used before.
         if (!pools.TryGetValue(prefab, out ObjectPool<GameObject> pool))
         {
             pool = CreatePool(prefab);

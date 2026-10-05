@@ -7,8 +7,8 @@ public class CustomerDelivery : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        PlayerCarry playerCarry =
-            other.GetComponent<PlayerCarry>();
+        // Save the player when they enter the delivery area.
+        PlayerCarry playerCarry = other.GetComponent<PlayerCarry>();
 
         if (playerCarry != null)
         {
@@ -17,16 +17,15 @@ public class CustomerDelivery : MonoBehaviour
             EmployeeMovement employee =
                 playerCarry.GetComponentInParent<EmployeeMovement>();
 
-            // Only stop if employee is actually carrying food
-            if (employee != null &&
-                playerCarry.IsCarrying)
+            // Only stop the employee if they are carrying food.
+            if (employee != null && playerCarry.IsCarrying)
             {
                 employee.ReachedDeliveryPoint();
             }
         }
 
-        Customer customerComponent =
-            other.GetComponentInParent<Customer>();
+        // Save the customer who has reached the delivery point.
+        Customer customerComponent = other.GetComponentInParent<Customer>();
 
         if (customerComponent != null)
         {
@@ -35,8 +34,8 @@ public class CustomerDelivery : MonoBehaviour
         }
 
         TryDeliver();
-    }   
-    
+    }
+
     private void OnTriggerStay(Collider other)
     {
         TryDeliver();
@@ -44,17 +43,14 @@ public class CustomerDelivery : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        PlayerCarry playerCarry =
-            other.GetComponent<PlayerCarry>();
+        PlayerCarry playerCarry = other.GetComponent<PlayerCarry>();
 
-        if (playerCarry != null &&
-            player == playerCarry)
+        if (playerCarry != null && player == playerCarry)
         {
             player = null;
         }
 
-        Customer customerComponent =
-            other.GetComponentInParent<Customer>();
+        Customer customerComponent = other.GetComponentInParent<Customer>();
 
         if (customerComponent != null)
         {
@@ -84,21 +80,12 @@ public class CustomerDelivery : MonoBehaviour
         if (customer.HasReceivedFood)
             return;
 
-        FoodType deliveredFood =
-            player.CarriedFoodType;
+        FoodType deliveredFood = player.CarriedFoodType;
+        GameObject food = player.TakeFood();
 
-        GameObject food =
-            player.TakeFood();
+        customer.ReceiveFood(food, deliveredFood);
 
-        customer.ReceiveFood(
-            food,
-            deliveredFood
-        );
-
-        // ---------------------------------------------
-        // EMPLOYEE FINISHED HIS DELIVERY
-        // ---------------------------------------------
-
+        // Tell the employee the delivery is done.
         EmployeeMovement employee =
             player.GetComponentInParent<EmployeeMovement>();
 

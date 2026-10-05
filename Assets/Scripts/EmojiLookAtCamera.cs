@@ -6,6 +6,7 @@ public class EmojiLookAtCamera : MonoBehaviour
 
     private void Start()
     {
+        // Keep a reference to the main camera so the emoji can face it.
         mainCamera = Camera.main;
     }
 

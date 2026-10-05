@@ -7,7 +7,6 @@ public class CustomerMovement : MonoBehaviour
     [SerializeField] private float rotationSpeed = 10f;
 
     private Customer customer;
-
     private CustomerWaypoint[] queueWaypoints;
     private Transform[] exitWaypoints;
 
@@ -19,13 +18,13 @@ public class CustomerMovement : MonoBehaviour
 
     private void Awake()
     {
+        // We need the customer script for queue and exit logic.
         customer = GetComponent<Customer>();
     }
 
-    public void Initialize(
-        CustomerWaypoint[] queuePath,
-        Transform[] exitPath)
+    public void Initialize(CustomerWaypoint[] queuePath, Transform[] exitPath)
     {
+        // Set the queue and exit path for this customer.
         queueWaypoints = queuePath;
         exitWaypoints = exitPath;
 
@@ -35,8 +34,7 @@ public class CustomerMovement : MonoBehaviour
         isMoving = false;
         isLeaving = false;
 
-        CustomerWaypoint startingWaypoint =
-            queueWaypoints[0];
+        CustomerWaypoint startingWaypoint = queueWaypoints[0];
 
         startingWaypoint.Reserve(customer);
         customer.SetWaypoint(startingWaypoint);
@@ -67,6 +65,7 @@ public class CustomerMovement : MonoBehaviour
 
     private void TryMoveToNextWaypoint()
     {
+        // Move to the next free queue point if one is available.
         if (currentWaypointIndex >= queueWaypoints.Length - 1)
             return;
 
@@ -84,15 +83,13 @@ public class CustomerMovement : MonoBehaviour
         }
 
         customer.SetWaypoint(nextWaypoint);
-
         currentWaypointIndex++;
         isMoving = true;
     }
 
     private void MoveToQueueWaypoint()
     {
-        Transform target =
-            queueWaypoints[currentWaypointIndex].transform;
+        Transform target = queueWaypoints[currentWaypointIndex].transform;
 
         MoveTowards(target);
 
@@ -119,8 +116,7 @@ public class CustomerMovement : MonoBehaviour
 
         exitWaypointIndex = 0;
 
-        if (exitWaypoints == null ||
-            exitWaypoints.Length == 0)
+        if (exitWaypoints == null || exitWaypoints.Length == 0)
         {
             ReturnToPool();
         }
@@ -128,8 +124,7 @@ public class CustomerMovement : MonoBehaviour
 
     private void MoveToExit()
     {
-        if (exitWaypoints == null ||
-            exitWaypoints.Length == 0)
+        if (exitWaypoints == null || exitWaypoints.Length == 0)
             return;
 
         Transform target = exitWaypoints[exitWaypointIndex];
@@ -147,14 +142,12 @@ public class CustomerMovement : MonoBehaviour
             exitWaypointIndex
         );
 
-        // Are we at the final exit waypoint?
         if (exitWaypointIndex >= exitWaypoints.Length - 1)
         {
             ReturnToPool();
             return;
         }
 
-        // Move to the next exit waypoint
         exitWaypointIndex++;
     }
 
@@ -168,15 +161,12 @@ public class CustomerMovement : MonoBehaviour
             moveSpeed * Time.deltaTime
         );
 
-        Vector3 direction =
-            targetPosition - transform.position;
-
+        Vector3 direction = targetPosition - transform.position;
         direction.y = 0f;
 
         if (direction.sqrMagnitude > 0.001f)
         {
-            Quaternion targetRotation =
-                Quaternion.LookRotation(direction);
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
 
             transform.rotation = Quaternion.Slerp(
                 transform.rotation,
@@ -188,10 +178,7 @@ public class CustomerMovement : MonoBehaviour
 
     private bool ReachedTarget(Transform target)
     {
-        return Vector3.Distance(
-            transform.position,
-            target.position
-        ) <= waypointDistance;
+        return Vector3.Distance(transform.position, target.position) <= waypointDistance;
     }
 
     private void ReturnToPool()
@@ -202,7 +189,6 @@ public class CustomerMovement : MonoBehaviour
         );
 
         customer.ReturnFoodToPool();
-
         PoolManager.Instance.Release(gameObject);
     }
 }

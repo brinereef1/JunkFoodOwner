@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class KitchenStation : MonoBehaviour
 {
@@ -7,43 +8,73 @@ public class KitchenStation : MonoBehaviour
     [SerializeField] private GameObject foodPrefab;
     [SerializeField] private float pickupTime = 2f;
 
+    [Header("Loading")]
+    [SerializeField] private GameObject loadingImageObject;
+
     public FoodType FoodType => foodType;
 
     private PlayerCarry currentPlayer;
     private Coroutine pickupCoroutine;
 
+    private Image loadingImage;
+
+    private void Awake()
+    {
+        // Link the loading image so we can show progress while food is being made.
+        if (loadingImageObject != null)
+        {
+            loadingImage =
+                loadingImageObject.GetComponent<Image>();
+
+            if (loadingImage == null)
+            {
+                Debug.LogError(
+                    gameObject.name +
+                    ": Loading Image GameObject does not have an Image component!"
+                );
+            }
+        }
+        else
+        {
+            Debug.LogError(
+                gameObject.name +
+                ": Loading Image Object is not assigned!"
+            );
+        }
+    }
+
+    private void Start()
+    {
+        // Start hidden until the player begins making food.
+        DisableLoadingImage();
+    }
+
     private void OnTriggerEnter(Collider other)
     {
+        // Only a player can start food prep here.
         PlayerCarry playerCarry =
             other.GetComponent<PlayerCarry>();
 
         if (playerCarry == null)
             return;
 
-        // Someone is already using this station
         if (currentPlayer != null)
             return;
 
-        // Player/employee already carrying something
         if (playerCarry.IsCarrying)
             return;
 
-        // ---------------------------------------------
-        // Everything passed.
-        // NOW this station accepts the interaction.
-        // ---------------------------------------------
-
         currentPlayer = playerCarry;
 
-        // Check if this is an employee
         EmployeeMovement employee =
             playerCarry.GetComponentInParent<EmployeeMovement>();
 
         if (employee != null)
         {
-            // Only NOW stop the employee.
             employee.StartFoodPreparation(this);
         }
+
+        StartLoadingImage();
 
         pickupCoroutine =
             StartCoroutine(PickupFood());
@@ -51,39 +82,56 @@ public class KitchenStation : MonoBehaviour
 
     private IEnumerator PickupFood()
     {
+        // The player is making food at this station.
         Debug.Log(
             foodType +
             " preparation started."
         );
 
-        yield return new WaitForSeconds(pickupTime);
+        float timer = 0f;
 
-        // Nobody is using the station anymore
+        while (timer < pickupTime)
+        {
+            timer += Time.deltaTime;
+
+            if (loadingImage != null)
+            {
+                loadingImage.fillAmount =
+                    Mathf.Clamp01(timer / pickupTime);
+            }
+
+            yield return null;
+        }
+
         if (currentPlayer == null)
         {
+            DisableLoadingImage();
+
             pickupCoroutine = null;
             yield break;
         }
 
-        // Someone already picked something up
         if (currentPlayer.IsCarrying)
         {
+            DisableLoadingImage();
+
             pickupCoroutine = null;
             yield break;
         }
 
-        // Give food
         currentPlayer.PickUpFood(
             foodPrefab,
             foodType
         );
 
+        // The food is ready to hand to the employee.
         Debug.Log(
             foodType +
             " is ready."
         );
 
-        // If employee, tell employee to continue.
+        DisableLoadingImage();
+
         EmployeeMovement employee =
             currentPlayer.GetComponentInParent<EmployeeMovement>();
 
@@ -97,6 +145,7 @@ public class KitchenStation : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
+        // If the player leaves, cancel the current food prep.
         PlayerCarry playerCarry =
             other.GetComponent<PlayerCarry>();
 
@@ -106,9 +155,6 @@ public class KitchenStation : MonoBehaviour
         if (playerCarry != currentPlayer)
             return;
 
-        // IMPORTANT:
-        // If preparation is still running,
-        // the person actually left before food was ready.
         if (pickupCoroutine != null)
         {
             Debug.Log(
@@ -127,8 +173,34 @@ public class KitchenStation : MonoBehaviour
 
             StopCoroutine(pickupCoroutine);
             pickupCoroutine = null;
+
+            DisableLoadingImage();
         }
 
         currentPlayer = null;
+    }
+
+    private void StartLoadingImage()
+    {
+        if (loadingImage == null)
+            return;
+
+        loadingImage.fillAmount = 0f;
+        loadingImage.gameObject.SetActive(true);
+
+        // Show the loading bar for this station.
+        Debug.Log(
+            gameObject.name +
+            ": Loading image ENABLED"
+        );
+    }
+
+    private void DisableLoadingImage()
+    {
+        if (loadingImage == null)
+            return;
+
+        loadingImage.fillAmount = 0f;
+        loadingImage.gameObject.SetActive(false);
     }
 }

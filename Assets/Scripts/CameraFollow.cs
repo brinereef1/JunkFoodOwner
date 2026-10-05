@@ -8,6 +8,7 @@ public class CameraFollow : MonoBehaviour
 
     private void LateUpdate()
     {
+        // Keep the camera behind the target at a set offset.
         if (target == null)
             return;
 

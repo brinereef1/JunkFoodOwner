@@ -1,3 +1,4 @@
+// This gives every food item a price when a customer orders it.
 public static class FoodPricing
 {
     public static int GetPrice(FoodType foodType)

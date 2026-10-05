@@ -1,27 +1,45 @@
 using System.Collections;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class EmployeeHiringStation : MonoBehaviour
 {
     [Header("Hiring")]
-    [SerializeField] private int employeeCost = 20;
+    [SerializeField] private int employeeCost = 50;
     [SerializeField] private float hireTime = 3f;
 
     [Header("Employee")]
     [SerializeField] private GameObject employee;
     [SerializeField] private Transform employeeSpawnPoint;
 
+    [Header("UI")]
+    [SerializeField] private TMP_Text hireAmountText;
+
+    [Header("Loading")]
+    [SerializeField] private Image loadingImage;
+
     private PlayerCarry currentPlayer;
     private Coroutine hiringCoroutine;
     private bool employeeHired;
+    private int remainingCost;
+
+    private void Awake()
+    {
+        // Start with the full employee cost.
+        remainingCost = employeeCost;
+    }
 
     private void Start()
     {
-        // Make absolutely sure the employee starts disabled.
+        // The employee is hidden until the player has paid enough.
         if (employee != null)
         {
             employee.SetActive(false);
         }
+
+        UpdateHireAmountUI();
+        DisableLoadingImage();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -40,52 +58,159 @@ public class EmployeeHiringStation : MonoBehaviour
 
         currentPlayer = playerCarry;
 
-        Debug.Log("Hiring employee...");
+        Debug.Log(
+            "Employee payment started. " +
+            "Remaining: $" + remainingCost
+        );
 
-        hiringCoroutine =
-            StartCoroutine(HireEmployee());
+        StartLoadingImage();
+        hiringCoroutine = StartCoroutine(ProcessEmployeePayment());
     }
 
-    private IEnumerator HireEmployee()
+    private IEnumerator ProcessEmployeePayment()
     {
-        yield return new WaitForSeconds(hireTime);
+        // Work out how much the player can pay right now.
+        int playerMoney = MoneyManager.Instance.Money;
+        int payment = Mathf.Min(playerMoney, remainingCost);
 
-        if (currentPlayer == null)
-        {
-            hiringCoroutine = null;
-            yield break;
-        }
+        int oldMoney = playerMoney;
+        int newMoney = playerMoney - payment;
 
-        // Check money
-        if (!MoneyManager.Instance.CanAfford(employeeCost))
+        int oldRemainingCost = remainingCost;
+        int newRemainingCost = remainingCost - payment;
+
+        // Animate the money and hiring cost during the payment timer.
+        float timer = 0f;
+
+        while (timer < hireTime)
         {
-            Debug.Log(
-                "Not enough money to hire employee. " +
-                "Need $" + employeeCost +
-                ", have $" + MoneyManager.Instance.Money
+            // If the player walks away, stop the payment.
+            if (currentPlayer == null)
+            {
+                RestoreUI();
+                DisableLoadingImage();
+                hiringCoroutine = null;
+                yield break;
+            }
+
+            timer += Time.deltaTime;
+
+            float progress = Mathf.Clamp01(timer / hireTime);
+
+            if (loadingImage != null)
+            {
+                loadingImage.fillAmount = progress;
+            }
+
+            int animatedMoney = Mathf.RoundToInt(
+                Mathf.Lerp(oldMoney, newMoney, progress)
             );
 
-            currentPlayer = null;
-            hiringCoroutine = null;
+            MoneyManager.Instance.SetMoneyDisplay(animatedMoney);
 
-            yield break;
+            int animatedHireCost = Mathf.RoundToInt(
+                Mathf.Lerp(oldRemainingCost, newRemainingCost, progress)
+            );
+
+            if (hireAmountText != null)
+            {
+                hireAmountText.text = "$" + animatedHireCost;
+            }
+
+            yield return null;
         }
 
-        // Pay for employee
-        MoneyManager.Instance.SpendMoney(employeeCost);
+        // Force the UI to show the final values.
+        MoneyManager.Instance.SetMoneyDisplay(newMoney);
 
-        // ENABLE existing employee
+        if (hireAmountText != null)
+        {
+            hireAmountText.text = "$" + newRemainingCost;
+        }
+
+        if (loadingImage != null)
+        {
+            loadingImage.fillAmount = 1f;
+        }
+
+        // Pay the money from the player's wallet.
+        if (payment > 0)
+        {
+            bool paymentSuccessful = MoneyManager.Instance.SpendMoney(payment);
+
+            if (!paymentSuccessful)
+            {
+                RestoreUI();
+                DisableLoadingImage();
+                currentPlayer = null;
+                hiringCoroutine = null;
+                yield break;
+            }
+
+            remainingCost = newRemainingCost;
+
+            Debug.Log(
+                "Paid $" + payment +
+                " toward employee."
+            );
+
+            Debug.Log(
+                "Employee still needs $" +
+                remainingCost
+            );
+        }
+
+        // If the full amount is paid, hire the employee.
+        if (remainingCost <= 0)
+        {
+            HireEmployee();
+        }
+        else
+        {
+            Debug.Log(
+                "Partial payment complete. " +
+                "Need another $" +
+                remainingCost
+            );
+        }
+
+        DisableLoadingImage();
+        currentPlayer = null;
+        hiringCoroutine = null;
+    }
+
+    private void HireEmployee()
+    {
+        Debug.Log("Employee fully paid! Hiring employee.");
+
+        if (employeeSpawnPoint != null)
+        {
+            employee.transform.SetPositionAndRotation(
+                employeeSpawnPoint.position,
+                employeeSpawnPoint.rotation
+            );
+        }
+
         employee.SetActive(true);
-
         employeeHired = true;
 
-        // Disable hiring station
+        // Hide the spawn point and station once the employee is hired.
+        if (employeeSpawnPoint != null)
+        {
+            employeeSpawnPoint.gameObject.SetActive(false);
+        }
+
         gameObject.SetActive(false);
 
         Debug.Log("Employee hired!");
+    }
 
-        currentPlayer = null;
-        hiringCoroutine = null;
+    private void UpdateHireAmountUI()
+    {
+        if (hireAmountText == null)
+            return;
+
+        hireAmountText.text = "$" + remainingCost;
     }
 
     private void OnTriggerExit(Collider other)
@@ -107,8 +232,41 @@ public class EmployeeHiringStation : MonoBehaviour
             hiringCoroutine = null;
         }
 
-        Debug.Log(
-            "Player left before hiring was complete."
-        );
+        // Put the UI back to the real values.
+        RestoreUI();
+
+        DisableLoadingImage();
+
+        Debug.Log("Player left before payment was complete.");
+    }
+
+    private void RestoreUI()
+    {
+        if (MoneyManager.Instance != null)
+        {
+            MoneyManager.Instance.SetMoneyDisplay(
+                MoneyManager.Instance.Money
+            );
+        }
+
+        UpdateHireAmountUI();
+    }
+
+    private void StartLoadingImage()
+    {
+        if (loadingImage == null)
+            return;
+
+        loadingImage.fillAmount = 0f;
+        loadingImage.gameObject.SetActive(true);
+    }
+
+    private void DisableLoadingImage()
+    {
+        if (loadingImage == null)
+            return;
+
+        loadingImage.fillAmount = 0f;
+        loadingImage.gameObject.SetActive(false);
     }
 }

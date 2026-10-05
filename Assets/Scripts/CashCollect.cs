@@ -4,14 +4,13 @@ public class CashCollect : MonoBehaviour
 {
     private void OnTriggerEnter(Collider other)
     {
-        CharacterController player =
-            other.GetComponentInParent<CharacterController>();
+        // When the player touches the cash, collect it.
+        PlayerMovement player =
+            other.GetComponentInParent<PlayerMovement>();
 
         if (player == null)
             return;
 
-        Debug.Log("Cash collected: " + gameObject.name);
-
-        gameObject.SetActive(false);
+        MoneyManager.Instance.CollectCash(gameObject);
     }
 }

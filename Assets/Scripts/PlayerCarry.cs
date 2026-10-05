@@ -6,7 +6,6 @@ public class PlayerCarry : MonoBehaviour
     private FoodType carriedFoodType;
 
     public bool IsCarrying => carriedFood != null;
-
     public FoodType CarriedFoodType => carriedFoodType;
 
     public GameObject TakeFood()
@@ -15,15 +14,12 @@ public class PlayerCarry : MonoBehaviour
             return null;
 
         GameObject food = carriedFood;
-
         carriedFood = null;
 
         return food;
     }
 
-    public void PickUpFood(
-        GameObject foodPrefab,
-        FoodType foodType)
+    public void PickUpFood(GameObject foodPrefab, FoodType foodType)
     {
         if (IsCarrying)
             return;
@@ -36,15 +32,10 @@ public class PlayerCarry : MonoBehaviour
             transform.rotation
         );
 
-        // Keep the exact world position and rotation
-        // where the food spawned.
-        carriedFood.transform.SetParent(
-            transform,
-            true
-        );
+        // Keep the same world position and rotation when the food is attached to the player.
+        carriedFood.transform.SetParent(transform, true);
 
-        Rigidbody rb =
-            carriedFood.GetComponent<Rigidbody>();
+        Rigidbody rb = carriedFood.GetComponent<Rigidbody>();
 
         if (rb != null)
         {

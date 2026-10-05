@@ -2,14 +2,14 @@ using UnityEngine;
 
 public class EmployeeMovement : MonoBehaviour
 {
-private enum EmployeeState
-{
-    Idle,
-    GoingToFoodStation,
-    WaitingForFood,
-    GoingToDelivery,
-    WaitingForDelivery
-}
+    private enum EmployeeState
+    {
+        Idle,
+        GoingToFoodStation,
+        WaitingForFood,
+        GoingToDelivery,
+        WaitingForDelivery
+    }
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 2.5f;
@@ -23,20 +23,20 @@ private enum EmployeeState
     private PlayerCarry playerCarry;
 
     private EmployeeState state = EmployeeState.Idle;
-
     private Customer targetCustomer;
     private KitchenStation targetStation;
 
     private void Awake()
     {
+        // Get the controller and carry object attached to this employee.
         controller = GetComponent<CharacterController>();
         playerCarry = GetComponentInChildren<PlayerCarry>();
     }
 
     private void OnEnable()
     {
+        // Start with a fresh job when this object is enabled.
         state = EmployeeState.Idle;
-
         targetCustomer = null;
         targetStation = null;
     }
@@ -54,7 +54,7 @@ private enum EmployeeState
                 break;
 
             case EmployeeState.WaitingForFood:
-                // Completely stopped.
+                // The employee is waiting for food.
                 break;
 
             case EmployeeState.GoingToDelivery:
@@ -62,14 +62,10 @@ private enum EmployeeState
                 break;
 
             case EmployeeState.WaitingForDelivery:
-                // Completely stopped.
+                // The employee is waiting at the delivery point.
                 break;
         }
     }
-
-    // ----------------------------------------------------
-    // FIND CUSTOMER
-    // ----------------------------------------------------
 
     private void FindCustomer()
     {
@@ -89,17 +85,12 @@ private enum EmployeeState
             if (customer.HasReceivedFood)
                 continue;
 
-            // Customer must currently be waiting
-            // at the delivery point.
+            // Only serve customers that are waiting at the delivery point.
             if (!customer.IsInsideDeliveryPoint)
                 continue;
 
             targetCustomer = customer;
-
-            targetStation =
-                FindFoodStation(
-                    customer.RequestedFood
-                );
+            targetStation = FindFoodStation(customer.RequestedFood);
 
             if (targetStation == null)
             {
@@ -117,20 +108,14 @@ private enum EmployeeState
                 customer.RequestedFood
             );
 
-            state =
-                EmployeeState.GoingToFoodStation;
-
+            state = EmployeeState.GoingToFoodStation;
             return;
         }
     }
 
-    // ----------------------------------------------------
-    // FIND FOOD STATION
-    // ----------------------------------------------------
-
-    private KitchenStation FindFoodStation(
-        FoodType requestedFood)
+    private KitchenStation FindFoodStation(FoodType requestedFood)
     {
+        // Find the kitchen station for the food the customer wants.
         foreach (KitchenStation station in foodStations)
         {
             if (station == null)
@@ -143,10 +128,6 @@ private enum EmployeeState
         return null;
     }
 
-    // ----------------------------------------------------
-    // MOVE TO FOOD STATION
-    // ----------------------------------------------------
-
     private void MoveToFoodStation()
     {
         if (targetStation == null)
@@ -158,12 +139,7 @@ private enum EmployeeState
         MoveTowards(targetStation.transform);
     }
 
-    // ----------------------------------------------------
-    // FOOD STATION TRIGGER CALLED THIS
-    // ----------------------------------------------------
-
-    public void ReachedFoodStation(
-        KitchenStation station)
+    public void ReachedFoodStation(KitchenStation station)
     {
         if (state != EmployeeState.GoingToFoodStation)
             return;
@@ -177,13 +153,8 @@ private enum EmployeeState
             " station. Waiting for food..."
         );
 
-        // STOP MOVING
         state = EmployeeState.WaitingForFood;
     }
-
-    // ----------------------------------------------------
-    // FOOD READY CALLED BY KITCHEN
-    // ----------------------------------------------------
 
     public void FoodReady()
     {
@@ -204,10 +175,6 @@ private enum EmployeeState
         state = EmployeeState.GoingToDelivery;
     }
 
-    // ----------------------------------------------------
-    // MOVE TO DELIVERY
-    // ----------------------------------------------------
-
     private void MoveToDelivery()
     {
         if (deliveryPoint == null)
@@ -223,10 +190,6 @@ private enum EmployeeState
         MoveTowards(deliveryPoint);
     }
 
-    // ----------------------------------------------------
-    // DELIVERY TRIGGER CALLED THIS
-    // ----------------------------------------------------
-
     public void ReachedDeliveryPoint()
     {
         if (state != EmployeeState.GoingToDelivery)
@@ -237,35 +200,21 @@ private enum EmployeeState
             "Waiting for delivery..."
         );
 
-        // STOP COMPLETELY
         state = EmployeeState.WaitingForDelivery;
     }
-
-    // ----------------------------------------------------
-    // DELIVERY COMPLETED CALLED BY CUSTOMERDELIVERY
-    // ----------------------------------------------------
 
     public void DeliveryCompleted()
     {
         if (state != EmployeeState.WaitingForDelivery)
             return;
 
-        Debug.Log(
-            "Employee completed delivery."
-        );
-
+        Debug.Log("Employee completed delivery.");
         ResetJob();
     }
 
-    // ----------------------------------------------------
-    // MOVEMENT
-    // ----------------------------------------------------
-
     private void MoveTowards(Transform target)
     {
-        Vector3 direction =
-            target.position - transform.position;
-
+        Vector3 direction = target.position - transform.position;
         direction.y = 0f;
 
         if (direction.sqrMagnitude <= 0.001f)
@@ -273,22 +222,15 @@ private enum EmployeeState
 
         direction.Normalize();
 
-        controller.Move(
-            direction *
-            moveSpeed *
-            Time.deltaTime
+        controller.Move(direction * moveSpeed * Time.deltaTime);
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            targetRotation,
+            rotationSpeed * Time.deltaTime
         );
-
-        Quaternion targetRotation =
-            Quaternion.LookRotation(direction);
-
-        transform.rotation =
-            Quaternion.Slerp(
-                transform.rotation,
-                targetRotation,
-                rotationSpeed *
-                Time.deltaTime
-            );
     }
 
     public void StartFoodPreparation(KitchenStation station)
@@ -313,18 +255,14 @@ private enum EmployeeState
         if (state != EmployeeState.WaitingForFood)
             return;
 
-        Debug.Log(
-            "Employee left food station. Resuming movement."
-        );
-
+        Debug.Log("Employee left food station. Resuming movement.");
         state = EmployeeState.GoingToFoodStation;
     }
-    
+
     private void ResetJob()
     {
         targetCustomer = null;
         targetStation = null;
-
         state = EmployeeState.Idle;
     }
 }

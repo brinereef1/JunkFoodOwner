@@ -7,28 +7,29 @@ public class PlayerMovement : MonoBehaviour
 
     private CharacterController controller;
 
-    void Start()
+    private void Start()
     {
+        // Get the character controller so we can move the player.
         controller = GetComponent<CharacterController>();
     }
 
-    void Update()
+    private void Update()
     {
         float horizontal = Input.GetAxis("Horizontal");
         float vertical = Input.GetAxis("Vertical");
 
         Vector3 movement = new Vector3(horizontal, 0f, vertical);
 
-        // Prevent diagonal movement from being faster
+        // Keep the movement speed the same even when moving diagonally.
         if (movement.magnitude > 1f)
         {
             movement.Normalize();
         }
 
-        // Move player
+        // Move the player with the character controller.
         controller.Move(movement * moveSpeed * Time.deltaTime);
 
-        // Rotate player toward movement direction
+        // Turn the player to face the direction of movement.
         if (movement != Vector3.zero)
         {
             Quaternion targetRotation = Quaternion.LookRotation(movement);

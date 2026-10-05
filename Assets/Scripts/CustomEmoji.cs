@@ -21,6 +21,7 @@ public class CustomerEmoji : MonoBehaviour
             return;
         }
 
+        // Show the food the customer wants.
         switch (foodType)
         {
             case FoodType.Burger:
@@ -47,6 +48,7 @@ public class CustomerEmoji : MonoBehaviour
             return;
         }
 
+        // Show a happy or angry face based on the result.
         if (correctOrder)
         {
             spriteRenderer.sprite = happySprite;

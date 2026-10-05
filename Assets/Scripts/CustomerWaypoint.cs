@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class CustomerWaypoint : MonoBehaviour
 {
+    // This stores which customer is currently using this waypoint.
     public Customer OccupyingCustomer { get; private set; }
 
     public bool IsEmpty => OccupyingCustomer == null;
