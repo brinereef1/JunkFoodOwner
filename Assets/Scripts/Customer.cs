@@ -32,8 +32,49 @@ public class Customer : MonoBehaviour
 
     private void CreateOrder()
     {
-        int foodCount = System.Enum.GetValues(typeof(FoodType)).Length;
-        RequestedFood = (FoodType)Random.Range(0, foodCount);
+        KitchenStation[] stations =
+            FindObjectsByType<KitchenStation>(
+                FindObjectsSortMode.None
+            );
+
+        System.Collections.Generic.List<FoodType>
+            availableFood =
+            new System.Collections.Generic.List<FoodType>();
+
+        foreach (KitchenStation station in stations)
+        {
+            if (station == null)
+                continue;
+
+            if (!station.gameObject.activeInHierarchy)
+                continue;
+
+            if (!availableFood.Contains(
+                    station.FoodType))
+            {
+                availableFood.Add(
+                    station.FoodType
+                );
+            }
+        }
+
+        // Safety check
+        if (availableFood.Count == 0)
+        {
+            Debug.LogWarning(
+                "No active food stations available!"
+            );
+
+            return;
+        }
+
+        RequestedFood =
+            availableFood[
+                Random.Range(
+                    0,
+                    availableFood.Count
+                )
+            ];
 
         Debug.Log(
             gameObject.name +
@@ -41,10 +82,9 @@ public class Customer : MonoBehaviour
             RequestedFood
         );
 
-        if (customerEmoji != null)
-        {
-            customerEmoji.ShowFoodRequest(RequestedFood);
-        }
+        customerEmoji.ShowFoodRequest(
+            RequestedFood
+        );
     }
 
     public void SetWaypoint(CustomerWaypoint waypoint)

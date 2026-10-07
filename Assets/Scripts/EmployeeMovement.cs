@@ -17,7 +17,10 @@ public class EmployeeMovement : MonoBehaviour
 
     [Header("Restaurant")]
     [SerializeField] private Transform deliveryPoint;
-    [SerializeField] private KitchenStation[] foodStations;
+
+    // Parent containing all food stations.
+    // Only enabled child stations will be used.
+    [SerializeField] private Transform foodStationsParent;
 
     private CharacterController controller;
     private PlayerCarry playerCarry;
@@ -28,14 +31,12 @@ public class EmployeeMovement : MonoBehaviour
 
     private void Awake()
     {
-        // Get the controller and carry object attached to this employee.
         controller = GetComponent<CharacterController>();
         playerCarry = GetComponentInChildren<PlayerCarry>();
     }
 
     private void OnEnable()
     {
-        // Start with a fresh job when this object is enabled.
         state = EmployeeState.Idle;
         targetCustomer = null;
         targetStation = null;
@@ -54,7 +55,6 @@ public class EmployeeMovement : MonoBehaviour
                 break;
 
             case EmployeeState.WaitingForFood:
-                // The employee is waiting for food.
                 break;
 
             case EmployeeState.GoingToDelivery:
@@ -62,7 +62,6 @@ public class EmployeeMovement : MonoBehaviour
                 break;
 
             case EmployeeState.WaitingForDelivery:
-                // The employee is waiting at the delivery point.
                 break;
         }
     }
@@ -85,17 +84,20 @@ public class EmployeeMovement : MonoBehaviour
             if (customer.HasReceivedFood)
                 continue;
 
-            // Only serve customers that are waiting at the delivery point.
             if (!customer.IsInsideDeliveryPoint)
                 continue;
 
             targetCustomer = customer;
-            targetStation = FindFoodStation(customer.RequestedFood);
+
+            targetStation =
+                FindFoodStation(
+                    customer.RequestedFood
+                );
 
             if (targetStation == null)
             {
                 Debug.LogWarning(
-                    "No food station found for " +
+                    "No enabled food station found for " +
                     customer.RequestedFood
                 );
 
@@ -108,16 +110,40 @@ public class EmployeeMovement : MonoBehaviour
                 customer.RequestedFood
             );
 
-            state = EmployeeState.GoingToFoodStation;
+            state =
+                EmployeeState.GoingToFoodStation;
+
             return;
         }
     }
 
-    private KitchenStation FindFoodStation(FoodType requestedFood)
+    private KitchenStation FindFoodStation(
+        FoodType requestedFood)
     {
-        // Find the kitchen station for the food the customer wants.
-        foreach (KitchenStation station in foodStations)
+        if (foodStationsParent == null)
         {
+            Debug.LogError(
+                "Food Stations Parent is not assigned!"
+            );
+
+            return null;
+        }
+
+        // Look through every child of the parent.
+        for (int i = 0;
+             i < foodStationsParent.childCount;
+             i++)
+        {
+            Transform child =
+                foodStationsParent.GetChild(i);
+
+            // Ignore disabled stations.
+            if (!child.gameObject.activeInHierarchy)
+                continue;
+
+            KitchenStation station =
+                child.GetComponent<KitchenStation>();
+
             if (station == null)
                 continue;
 
@@ -139,7 +165,8 @@ public class EmployeeMovement : MonoBehaviour
         MoveTowards(targetStation.transform);
     }
 
-    public void ReachedFoodStation(KitchenStation station)
+    public void ReachedFoodStation(
+        KitchenStation station)
     {
         if (state != EmployeeState.GoingToFoodStation)
             return;
@@ -208,13 +235,19 @@ public class EmployeeMovement : MonoBehaviour
         if (state != EmployeeState.WaitingForDelivery)
             return;
 
-        Debug.Log("Employee completed delivery.");
+        Debug.Log(
+            "Employee completed delivery."
+        );
+
         ResetJob();
     }
 
     private void MoveTowards(Transform target)
     {
-        Vector3 direction = target.position - transform.position;
+        Vector3 direction =
+            target.position -
+            transform.position;
+
         direction.y = 0f;
 
         if (direction.sqrMagnitude <= 0.001f)
@@ -222,18 +255,26 @@ public class EmployeeMovement : MonoBehaviour
 
         direction.Normalize();
 
-        controller.Move(direction * moveSpeed * Time.deltaTime);
-
-        Quaternion targetRotation = Quaternion.LookRotation(direction);
-
-        transform.rotation = Quaternion.Slerp(
-            transform.rotation,
-            targetRotation,
-            rotationSpeed * Time.deltaTime
+        controller.Move(
+            direction *
+            moveSpeed *
+            Time.deltaTime
         );
+
+        Quaternion targetRotation =
+            Quaternion.LookRotation(direction);
+
+        transform.rotation =
+            Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                rotationSpeed *
+                Time.deltaTime
+            );
     }
 
-    public void StartFoodPreparation(KitchenStation station)
+    public void StartFoodPreparation(
+        KitchenStation station)
     {
         if (state != EmployeeState.GoingToFoodStation)
             return;
@@ -255,14 +296,20 @@ public class EmployeeMovement : MonoBehaviour
         if (state != EmployeeState.WaitingForFood)
             return;
 
-        Debug.Log("Employee left food station. Resuming movement.");
-        state = EmployeeState.GoingToFoodStation;
+        Debug.Log(
+            "Employee left food station. " +
+            "Resuming movement."
+        );
+
+        state =
+            EmployeeState.GoingToFoodStation;
     }
 
     private void ResetJob()
     {
         targetCustomer = null;
         targetStation = null;
+
         state = EmployeeState.Idle;
     }
 }
