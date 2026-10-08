@@ -2,25 +2,25 @@ using UnityEngine;
 
 public class CustomerWaypoint : MonoBehaviour
 {
-    // This stores which customer is currently using this waypoint.
-    public Customer OccupyingCustomer { get; private set; }
+    private Customer occupant;
 
-    public bool IsEmpty => OccupyingCustomer == null;
+    public bool IsOccupied => occupant != null;
 
-    public bool Reserve(Customer customer)
+    public bool TryReserve(Customer customer)
     {
-        if (!IsEmpty)
+        if (customer == null)
             return false;
 
-        OccupyingCustomer = customer;
+        if (occupant != null && occupant != customer)
+            return false;
+
+        occupant = customer;
         return true;
     }
 
     public void Release(Customer customer)
     {
-        if (OccupyingCustomer == customer)
-        {
-            OccupyingCustomer = null;
-        }
+        if (occupant == customer)
+            occupant = null;
     }
 }
