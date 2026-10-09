@@ -257,7 +257,15 @@ public class FoodStationUpgrade : MonoBehaviour
 
         purchased = true;
 
-        // Disable this purchase area
+        // Hide the purchase UI before disabling the station.
+        DisableLoadingImage();
+
+        if (costText != null)
+        {
+            costText.gameObject.SetActive(false);
+        }
+
+        // Disable the entire purchase station.
         gameObject.SetActive(false);
 
         Debug.Log(

@@ -6,11 +6,15 @@ public class PlayerMovement : MonoBehaviour
     public float rotationSpeed = 10f;
 
     private CharacterController controller;
+    private float fixedY;
 
     private void Start()
     {
         // Get the character controller so we can move the player.
         controller = GetComponent<CharacterController>();
+
+        // Store the starting Y position.
+        fixedY = transform.position.y;
     }
 
     private void Update()
@@ -28,6 +32,11 @@ public class PlayerMovement : MonoBehaviour
 
         // Move the player with the character controller.
         controller.Move(movement * moveSpeed * Time.deltaTime);
+
+        // Freeze Y position.
+        Vector3 position = transform.position;
+        position.y = fixedY;
+        transform.position = position;
 
         // Turn the player to face the direction of movement.
         if (movement != Vector3.zero)

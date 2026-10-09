@@ -215,9 +215,9 @@ public class TablePurchaseStation : MonoBehaviour
         }
 
         bool unlocked =
-            TableManager.Instance.UnlockTable(
-                tableToUnlock
-            );
+        TableManager.Instance.UnlockTable(
+            tableToUnlock
+        );
 
         if (!unlocked)
         {
@@ -226,7 +226,6 @@ public class TablePurchaseStation : MonoBehaviour
                 "Money was NOT spent."
             );
 
-            // Restore actual money display.
             MoneyManager.Instance.SetMoneyDisplay(
                 startingMoney
             );
@@ -249,17 +248,25 @@ public class TablePurchaseStation : MonoBehaviour
         );
 
         // ---------------------------------------------
-        // CLEANUP
+        // HIDE PURCHASE UI
         // ---------------------------------------------
 
         if (loadingImage != null)
         {
-            loadingImage.fillAmount = 1f;
+            loadingImage.gameObject.SetActive(false);
         }
+
+        if (tableCostText != null)
+        {
+            tableCostText.gameObject.SetActive(false);
+        }
+
+        // ---------------------------------------------
+        // DISABLE PURCHASE STATION
+        // ---------------------------------------------
 
         purchasing = false;
 
-        // Purchase station no longer needed.
         gameObject.SetActive(false);
     }
 

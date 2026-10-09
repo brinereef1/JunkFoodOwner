@@ -194,12 +194,21 @@ public class EmployeeHiringStation : MonoBehaviour
         employee.SetActive(true);
         employeeHired = true;
 
-        // Hide the spawn point and station once the employee is hired.
+        // Hide the spawn point.
         if (employeeSpawnPoint != null)
         {
             employeeSpawnPoint.gameObject.SetActive(false);
         }
 
+        // Hide the payment UI before disabling this station.
+        DisableLoadingImage();
+
+        if (hireAmountText != null)
+        {
+            hireAmountText.gameObject.SetActive(false);
+        }
+
+        // Disable the entire hiring station.
         gameObject.SetActive(false);
 
         Debug.Log("Employee hired!");
